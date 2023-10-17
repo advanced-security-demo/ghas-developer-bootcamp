@@ -69,14 +69,6 @@ Similar to the repository level, navigate to the `Code security and analysis` bu
 
 NOTE: DO NOT click the `Enable All` button if you are organization admin. We will follow the repo level enablement in this workshop
 
-##### IssueOps way (?)
-
-In your organization the current way development teams to enable GitHub Advanced Security to their repositories is via the DevX portal. Let's go ahead and enable GitHub Advanced Security for our repository via the DevX portal.
-
-You should see `Enable GHAS on GitHub Repositories` service on the DevX portal. Select it and follow the steps by selecting your training repository. Observe the progress and the final result.
-
-After completion, navigate back to your training repository and check the `Code security and analysis` section. You will notice that GitHub Advanced Security is enabled.
-
 ### How does it work?
 
 #### Exercise 2 - Secret Scanning and Push Protection (10 mins)
@@ -520,6 +512,7 @@ def foo():
         print(f"WARNING: A developer dismissed a critical alert for reason: { data['alert']['dismissed_reason'] }.")
     return "OK"
 ```
+</detail>
 
 ### Troubleshooting GHAS
 
