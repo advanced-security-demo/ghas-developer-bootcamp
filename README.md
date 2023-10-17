@@ -1,75 +1,13 @@
 
 <h1 align="center">GitHub Advanced Security Bootcamp</h1>
-<p align="center">
-  <a href="#mega-prerequisites">Prerequisites</a> •  
-  <a href="#books-resources">Resources</a>
-</p>
 
 > This bootcamp is designed to help familiarize you with GitHub Advanced Security (GHAS) so that you can better understand how to use it in your own repositories.
-
-## :mega: Prerequisites
-To participate in the workshop you need a GitHub account and need to be invited to the workshop organization [ghas-bootcamp](https://github.com/ghas-bootcamp). If your repository hasn't been automatically created in the workshop organization, either click `Use this template` and create a repository under this organization, or create a new repository and push a copy of the `ghas-bootcamp` repository to an organization with GHAS enabled.
 
 ```bash
 git clone https://github.com/ghas-bootcamp/ghas-bootcamp.git
 cd ghas-bootcamp
 git remote set-url origin git@github.com:{org-or-username}/{repo-name}.git
 ```
-
-## 🏫 Agenda
-
-We will go over the following topics:
-
-<details>
-<summary>Day one </summary>
-
-#### Day one learning
-- [x] Comprehensive overview of GHAS
-- [x] Securing your supply chain with dependency management
-- [x] Secret scanning
-- [x] Rolling out GHAS in your organization
-- [x] Q&A
-
-#### Day one: Dependabot and Secret scanning exercises
-##### Dependabot: [link](exercises/lab%201%20-%20dependabot.md)
-- [x] Enabling Dependabot alerts
-- [x] Reviewing the dependency graph
-- [x] Viewing and managing results
-- [x] Enabling Dependabot security updates
-- [x] Configuring Dependabot security updates
-- [x] Working with Dependency Review
-
-##### Secret scanning: [link](exercises/lab%202%20-%20secret-scanning.md)
-- [x] Enabling secret scanning
-- [x] Viewing and managing results
-- [x] Excluding files from secret scanning
-- [x] Custom patterns for secret scanning
-- [x] Managing access to alerts
-
-</details>
-
-<details>
-<summary>Day two </summary>
-
-#### Day two learning
-- [x] Explore how code scanning works
-- [x] What is Security Overview?
-- [x] CodeQL Demo
-- [x] Final Q&A
-
-#### Day Two: Code scanning + CodeQL demo
-##### Code scanning: [link](exercises/lab%203%20-%20code-scanning.md)
-- [x] Enabling code scanning
-- [x] Reviewing any failed analysis jobs
-- [x] Using context and expressions to modify build
-- [x] Reviewing and managing results
-- [x] Triaging a result in a PR
-- [x] Customizing CodeQL configuration
-- [x] Adding your own code scanning suite to exclude rules
-- [x] Understanding how to add a custom query
-- [x] CodeQL demo
-
-</details>
 
 ## :books: Resources
 - [About code scanning](https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/about-code-scanning)
