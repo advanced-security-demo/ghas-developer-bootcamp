@@ -9,6 +9,26 @@ cd ghas-bootcamp
 git remote set-url origin git@github.com:{org-or-username}/{repo-name}.git
 ```
 
+## :octocat: Agenda
+
+### Day 1
+
+- [ ] What is GitHub Advanced Security?
+- [ ] GitHub Advanced Security Licensing?
+- [ ] GHAS Enablement
+- [ ] How does it work?
+- [ ] Access, Notifications and alerts
+
+Instructions for the hands-on exercises: [Platform Engineer - Day 1](exercises/platform-engineer-day1.md)
+
+### Day 2
+
+- [ ] Integrations - GHAS API and Webhooks
+- [ ] Code Scanning - Capacity planning
+- [ ] Troubleshooting GHAS
+
+Instructions for the hands-on exercises: [Platform Engineer - Day 2](exercises/platform-engineer-day2.md)
+
 ## :books: Resources
 - [About code scanning](https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/about-code-scanning)
 - [About Dependabot Alerts](https://docs.github.com/en/free-pro-team@latest/github/managing-security-vulnerabilities/about-alerts-for-vulnerable-dependencies)
