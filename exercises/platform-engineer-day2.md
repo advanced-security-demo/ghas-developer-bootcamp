@@ -13,12 +13,12 @@
 
 ### Exercise 5 - Run tool Checkov in PR and integrate in Code Scanning (15 mins)
 
-In this excercise we will integrate another security testing tool results into Code Scanning. The choice of a tool is Checkov. 
+In this exercise, we will integrate another security testing tool's results into Code Scanning. The choice of a tool is Checkov.
 
 ### Create a new workflow
 
-You need to create a new workflow file that will do the analysis. To do this you can navigate to the `Actions` tab of your repository and select `New workflow`. You will be presented with a list of templates.
-We will not be using already existing workflow on the marketplace in this excercises, so you will need to select `Skip this and set up a workflow yourself`. 
+You need to create a new workflow file that will do the analysis. To do this, you can navigate to the `Actions` tab of your repository and select `New workflow`. You will be presented with a list of templates.
+We will not be using already existing workflow on the marketplace in this exercise, so you will need to select `Skip this and set up a workflow yourself`.
 
 Navigate to [bridgecrewio/checkov-action](https://github.com/bridgecrewio/checkov-action) and copy the example config. Rename the workflow file to `checkov.yml` and paste the content into the editor and commit the file to your repository.
 
@@ -153,9 +153,9 @@ Next, go ahead and raise a PR against the default branch and check if that will 
 
 ### Create a new workflow
 
-Following the same steps create a new workflow file that will run the [advanced-security/secret-scanning-review-action](https://github.com/advanced-security/secret-scanning-review-action) action.
+Following the same steps, create a new workflow file that will run the [advanced-security/secret-scanning-review-action](https://github.com/advanced-security/secret-scanning-review-action) action.
 
-As also pointed out in the `README` of the `advanced-security/secret-scanning-review-action` you will have to create a new GitHub token with the `repo` scope and add it as a secret to your repository with a name `SECRET_SCAN_REVIEW_GITHUB_TOKEN`.
+As also pointed out in the `README` of the `advanced-security/secret-scanning-review-action`, you will have to create a new GitHub token with the `repo` scope and add it as a secret to your repository with a name `SECRET_SCAN_REVIEW_GITHUB_TOKEN`.
 
 <details>
 <summary>Solution</summary>
@@ -177,20 +177,20 @@ jobs:
 ```
 </details>
 
-### Trigger an action run in PR
+#### Trigger an action run in PR
 
 To trigger a new checkov run you can create a new branch and edit the `authn-service/.env` file and add the following secret `STRIPE_DEV="sk_live_devboxbcct1DfwS2ClCIKlbT"`
-Since you have Push Protection enabled go ahead and by pass it with `I'll fix it later` reason.
+Since you have Push Protection enabled go ahead and bypass it with `I'll fix it later` reason.
 
 Raise a PR and check if that will trigger an analysis and observe the results.
 
 ### Exercise 6 - Catch and alert on Push Protection bypasses (15 mins)
 
-### Setting up the local envrionment
+### Setting up the local environment
 
 If you haven't done it so far, go ahead and pull your training repository to your local machine.
 
-- Setup python virtual environment and install the requirements
+- Setup a python virtual environment and install the requirements
 
 ```bash
 python3 -m venv venv
@@ -198,18 +198,18 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-- Install [ngrok](https://ngrok.com/download) and setup a tunnel
+- Install [ngrok](https://ngrok.com/download) and set up a tunnel
 
 ### Create a new webhook
 
 - Visit the organization or repository on GitHub that you wish to set the webhook up for, and follow the [Setting up a webhook](https://docs.github.com/en/developers/webhooks-and-events/webhooks/creating-webhooks#setting-up-a-webhook) instructions.
 - Choose the `application/json` content type
-- Configure the events by choosing "Let me select individual events", and deselect the "Push" event and instead select the "Code Scanning alerts" event
+- Configure the events by choosing "Let me select individual events," and deselect the "Push" event and instead select the "Code Scanning alerts" event
 - Run `python3 generic_wh.py`, and trigger an event from your repository (For example: close a code scanning alert)
 
-Using the information from the [secret_scanning_alert docs](https://docs.github.com/en/enterprise-cloud@latest/webhooks/webhook-events-and-payloads#secret_scanning_alert) adapt the python code to catch the `secret_scanning_alert` and print an alert message to the console.
+Using the information from the [secret_scanning_alert docs](https://docs.github.com/en/enterprise-cloud@latest/webhooks/webhook-events-and-payloads#secret_scanning_alert), adapt the python code to catch the `secret_scanning_alert` and print an alert message to the console.
 
-#### Exercise 7 - Report on Code Scanning alerts that got dismissed (15 mins)
+### Exercise 7 - Report on Code Scanning alerts that got dismissed (15 mins)
 
 Following the similar steps as in the previous exercise, create a new webhook that will catch the `code_scanning_alert` event and change the `alerts_closed.py` to trigger when a critical code scanning alert is dismissed and print an alert message to the console.
 
@@ -224,6 +224,7 @@ def foo():
         print(f"WARNING: A developer dismissed a critical alert for reason: { data['alert']['dismissed_reason'] }.")
     return "OK"
 ```
+
 </details>
 
 ---
@@ -232,7 +233,7 @@ def foo():
 
 ### Exercise 8 - Investigate deactivation activity of GHAS in audit log (15 mins)
 
-In the past two days you have made some changes to your repository - enabled GHAS, added a custom secret scanning pattern, enabled push protection, closed alerts, etc. With this excercise we want to get familiar with how the audit log can help us troubleshoot issues or understand what happened in the past in regards to GHAS.
+In the past two days, you have made some changes to your repository - enabled GHAS, added a custom secret scanning pattern, enabled push protection, closed alerts, etc. With this exercise, we want to get familiar with how the audit log can help us troubleshoot issues or understand what happened in the past in regards to GHAS.
 
 We will use the audit log to answer questions about the actions that have been performed in our organization. Access the audit log by going to the `Settings` of your organization and selecting `Logs -> Audit log` from the left menu.
 
@@ -263,57 +264,56 @@ You can use the UI to search through the events. Using the information from the 
     - Search for `action:repository_secret_scanning_push_protection.enable`
 
 </details>
-
 ---
 
 ### Exercise 9 - Generate CodeQL debug and identify a problem (15 mins)
 
-In this exercise we will generate look at options for you to debug a Code Scanning - CodeQL debug analysis run. We will generate a CodeQL Code Scanning debug run file and understand the structure of a debug artifact, then we will also look at few debug artifacts to identify the problems and last how we can use the `Tool Status` to understand the status of the CodeQL analysis.
+In this exercise, we will generate and look at options for you to debug a Code Scanning - CodeQL debug analysis run. We will generate a CodeQL Code Scanning debug run file and understand the structure of a debug artifact. Then, we will also look at a few debug artifacts to identify the problems and, lastly, how we can use the `Tool Status` to understand the status of the CodeQL analysis.
 
 ### Enabling CodeQL Debug mode
 
-First navigate to the Actions tab on your repository and select the `CodeQL` workflow.
+First, navigate to the Actions tab on your repository and select the `CodeQL` workflow.
 
-You can re-run a CodeQL analysis in debug mode by selecting a CodeQL analysis workflo run, then clicking `Re-run all jobs` in the top right of the page and selecting `Enable debug logging` before hitting the  `Re-run jobs` button. This will trigger a new CodeQL analysis run after which and the debug data will be uploaded as Actions artifact. After the run has completed you should see a list of artifacts  `debug-artifacts-*`. Go ahead and download the `debug-artifacts-java`.
+You can re-run a CodeQL analysis in debug mode by selecting a CodeQL analysis workflow run, then clicking `Re-run all jobs` in the top right of the page and selecting `Enable debug logging` before hitting the `Re-run jobs` button. This will trigger a new CodeQL analysis run after which the debug data will be uploaded as Actions artifact. After the run has completed, you should see a list of artifacts `debug-artifacts-*`. Go ahead and download the `debug-artifacts-java`.
 
-The other option to enabled CodeQL debug mode in the Action is by providing `debug: true` configuration option. This is useful when you want to enabled debug mode for a workflow where you expect it to fail and you don't want to wait for it to finish before re-runnning it in debug mode.
-The end result is the same.
+The other option to enable CodeQL debug mode in the Action is by providing `debug: true` configuration option. This is useful when you want to enable debug mode for a workflow where you expect it to fail, and you don't want to wait for it to finish before re-running it in debug mode. The end result is the same.
 
 ### Understanding the debug artifact
 
 The debug artifact is a zip file that contains a number of files and directories. The most important ones are:
 
 - `java/log/`
-  - `ext/*` - directory containing the CodeQL extractor configuration, envrionment variables, etc
-  - `log/databbase-*` - files containing logs from the CodeQL database related operations - creation, initialization, etc
-  - `log/javac-*` - files containing logs from the compilation and extrator process
-- `log` - logs from the build tracker and database initializaiton
-- `java.sarif` - the results of the analysis in SARIF format
-- `db-java.zip` - the CodeQL database that was created and used for the analysis. This is the most important file as it contains all the information about the analysis. Beaware when sharing this archive as it also contains the source code of your repository.
+  - `ext/*` - a directory containing the CodeQL extractor configuration, environment variables, etc.
+  - `log/database-*` - files containing logs from the CodeQL database-related operations - creation, initialization, etc.
+  - `log/javac-*` - files containing logs from the compilation and extractor process.
+- `log` - logs from the build tracker and database initialization.
+- `java.sarif` - the results of the analysis in SARIF format.
+- `db-java.zip` - the CodeQL database that was created and used for the analysis. This is the most important file as it contains all the information about the analysis. Be aware when sharing this archive as it also contains the source code of your repository.
 
 ### Investigating the CodeQL debug artifact
 
-In this exercise we will look at few debug artifacts and try to identify the problem.
+In this exercise, we will look at a few debug artifacts and try to identify the problem.
 
-Go ahead and download the debug artifacts from the following link: [code-debug-artifactsjava](https://gh.io/ghas-training-debug-artifacts)
+Go ahead and download the debug artifacts from the following link: [code-debug-artifacts-java](https://gh.io/ghas-training-debug-artifacts)
 
-Using the artifact provided can you answer the following questions:
+Using the artifact provided, can you answer the following questions:
 
 - Which CodeQL CLI version was used for the analysis?
-- What type of codebase was the analysis ran on?
+- What type of codebase was the analysis run on?
 - Was the analysis completed successfully? If not, what was the reason?
-- Can you identified which CodeQL queries were configured for this analysis?
+- Can you identify which CodeQL queries were configured for this analysis?
 
-Hint: look into the `db-cpp-partial.zip` file
+Hint: Look into the `db-cpp-partial.zip` file
+
 <details>
 <summary>Solution</summary>
 - Which CodeQL CLI version was used for the analysis?
     - `CodeQL CLI version: 2.15.1`
-- What type of codebase was the analysis ran on?
-    - `C or Cpp` as can be guess from the filename but also the extractor used, or the `codeql-database.yml` file
+- What type of codebase was the analysis run on?
+    - `C or Cpp`, as can be guessed from the filename, but also the extractor used, or the `codeql-database.yml` file.
 - Was the analysis completed successfully? If not, what was the reason?
-    - No, the analysis failed because `No supported build system detected` as it can be seen in the extractor diagnostic message.
-    - Digging further in, we can also see that there were indeed empty source directory without code or build systems.
+    - No, the analysis failed because `No supported build system detected`, as it can be seen in the extractor diagnostic message.
+    - Digging further in, we can also see that there were indeed empty source directories without code or build systems.
 - The files `config-queries.qls` give us the list of queries that were configured for this analysis.
 </details>
 
@@ -326,4 +326,4 @@ Navigate to the `Tool status` section and answer the following questions:
 - Which CodeQL CLI version was used for the analysis?
 - Which Query Suite was used for the analysis for the last analysis of the Java codebase?
 - How many rules were ran in the last analysis of the Python codebase?
-- Where all the files from the Go component `gallery-service` scanned?
+- Were all the files from the Go component `gallery-service` scanned?

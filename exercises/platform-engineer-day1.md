@@ -168,17 +168,15 @@ STRIPE_NEW="sk_live_devboxbcct1DfwS2ClCIKllL"
 Secret scanning supports finding other [secret patterns](https://docs.github.com/en/code-security/secret-security/defining-custom-patterns-for-secret-scanning), which are specified by regex patterns and use the Hyperscan library.
 
 1. Add a custom secret pattern by going to the `Code security and analysis` settings and under the header "Custom patterns" click on `New pattern`.
-2. Add a custom pattern name, a secret format and test cases.
+2. Add a custom pattern name, a secret format and test cases.   For example:
+```
+Custom pattern name: My secret pattern
+Secret format: my_custom_secret_[a-z0-9]{3}
+Test string: my_custom_secret_123
+```
+3. Save your pattern and observe the secret scanning alerts page to see if your custom secret pattern has been detected.
 
-For example:
-    ```
-    Custom pattern name: My secret pattern
-    Secret format: my_custom_secret_[a-z0-9]{3}
-    Test string: my_custom_secret_123
-    ```
- 3. Save your pattern and observe the secret scanning alerts page to see if your custom secret pattern has been detected.
-
-### Another Secret Scanning pattern for interal token
+### Another Secret Scanning pattern for internal token
 
 Let's work on detecting the following secret:
 
@@ -231,9 +229,10 @@ After creating and publishing the custom pattern go ahead and select the `Push p
 
 CodeQL requires a build of compiled languages. An analysis job can fail if our *autobuilder* is unable to build a program to extract an analysis database.
 
-1. Inside the workflow you'll see a list of jobs on the left. Click on the Java job to view the logging output and review any errors to determine if there's a build failure.
+1. Inside the workflow, you'll see a list of jobs on the left. Click on the Java job to view the logging output and review any errors to determine if there's a build failure.
 
 2. The `autobuild` compilation failure appears to be caused by a JDK version mismatch. Our project targets JDK version 15. How can we check the Java version that the GitHub hosted runner is using? Does the logging output provide any helpful information?
+detailsYou could either check what is documented on the [runner-images](https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md) repository, or you can debug your self by executing another run.
 
     <details>
     <summary>Solution</summary>
@@ -246,16 +245,20 @@ CodeQL requires a build of compiled languages. An analysis job can fail if our *
         java -version
     ```
 
+    In any case you will conclude that the version is bellow 15. So, you will need to setup the correct version of Java in the runner for the build to succeed. 
+
     </details>
 
 3. The previous debugging has concluded that we have a mismatch.  Resolve the JDK version issue by using the `setup-java` Action in `codeql-analysis.yml` to explicitly specify a version.  This should be added to the workflow before the `autobuild` step to properly configure the runtime environment before the build.
 
     <details>
     <summary>Solution</summary>
+    ```yaml
       - uses: actions/setup-java@v3
         with:
             java-version: 16
             distribution: 'microsoft'
+    ```
     </details>
 
 ### Using context and expressions to modify build
@@ -279,11 +282,11 @@ You can run this step for only `Java` analysis when you use the `if` expression 
 
 2. For a result, determine:
     1. The issue reported.
-    1. The corresponding query id.
-    1. Its `Common Weakness Enumeration` identifier.
-    1. The recommendation to solve the issue.
-    1. The path from the `source` to the `sink`. Where would you apply a fix?
-    1. Is it a *true positive* or *false positive*?
+    2. The corresponding query id.
+    3. Its `Common Weakness Enumeration` identifier.
+    4. The recommendation to solve the issue.
+    5. The path from the `source` to the `sink`. Where would you apply a fix?
+    6. Is it a *true positive* or *false positive*?
 
 ### Triaging a result in a PR
 
@@ -297,7 +300,7 @@ Follow the next steps to see it in action.
     ```javascript
      - if (this.hasCode && this.hasState) {
      + eval(this.code)    
-     + if (this.hasCode && this.hasState) {
+     + if (this.hasCode && this hasState) {
     ```
 
 2. Is the vulnerability detected in your PR?
