@@ -17,17 +17,17 @@ git remote set-url origin git@github.com:{org-or-username}/{repo-name}.git
 - [ ] GitHub Advanced Security Licensing?
 - [ ] GHAS Enablement
 - [ ] How does it work?
-- [ ] Access, Notifications and alerts
 
-Instructions for the hands-on exercises: [Platform Engineer - Day 1](exercises/platform-engineer-day1.md)
+Instructions for the hands-on exercises: [Developer Exercises - Day 1](exercises/developer-exercises-day1.md)
 
 ### Day 2
 
+- [ ] How does it work? (Contd.)
+- [ ] Access, Notifications and alerts
 - [ ] Integrations - GHAS API and Webhooks
-- [ ] Code Scanning - Capacity planning
 - [ ] Troubleshooting GHAS
 
-Instructions for the hands-on exercises: [Platform Engineer - Day 2](exercises/platform-engineer-day2.md)
+Instructions for the hands-on exercises: [Developer Exercises - Day 2](exercises/developer-exercises-day2.md)
 
 ## :books: Resources
 - [About code scanning](https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/about-code-scanning)

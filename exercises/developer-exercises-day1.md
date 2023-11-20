@@ -1,11 +1,13 @@
-# GHAS for platform engineers
+# GHAS for developers
 
 ## Overview
 
 - [ ] [Exercise 1 - Enabling GHAS on your repository](#exercise-1---enabling-ghas-on-your-repository-10-minutes)
-- [ ] [Exercise 2 - Secret Scanning and Push Protection](#exercise-2---secret-scanning-and-push-protection-10-mins)
-- [ ] [Exercise 3 - Secret Scanning - Custom Secret Scanning Pattern + Push protection](#exercise-3---secret-scanning---custom-secret-scanning-pattern--push-protection-15-mins)
-- [ ] [Exercise 4 - Code Scanning and CodeQL](#exercise-4---code-scanning-and-codeql-20-mins)
+- [ ] [Exercise 2 - Dependabot](#exercise-2---dependabot-configuration-10-minutes)
+- [ ] [Exercise 3 - Dependancy Review](#exercise-3---dependancy-review-10-minutes)
+- [ ] [Exercise 4 - Secret Scanning and Push Protection](#exercise-4---secret-scanning-and-push-protection-10-mins)
+- [ ] [Exercise 5 - Secret Scanning - Custom Secret Scanning Pattern + Push protection](#exercise-5---secret-scanning---custom-secret-scanning-pattern--push-protection-15-mins)
+- [ ] [Exercise 6 - Code Scanning and CodeQL](#exercise-6---code-scanning-and-codeql-15-mins)
 
 ## GHAS Enablement
 
@@ -72,7 +74,196 @@ NOTE: DO NOT click the `Enable All` button if you are organization admin. We wil
 
 ## How does it work?
 
-### Exercise 2 - Secret Scanning and Push Protection (10 mins)
+### Exercise 2 - Dependabot configuration (10 minutes)
+
+#### Configuring Dependabot version updates
+
+You can enable Dependabot [*version updates*](https://docs.github.com/en/code-security/supply-chain-security/keeping-your-dependencies-updated-automatically/enabling-and-disabling-version-updates) by checking in a dependabot.yml into your repository's `.github` directory. Dependabot security updates uses this configuration as well. To successfully integrate the security updates into the SDLC, it is possible to configure various aspects such as:
+
+- When version updates are created.
+- What labels are assigned to enable filtering options.
+- Who is assigned to the PR and who should review it.
+- Which dependencies are updated and how they are updated.
+
+Create the `.github/dependabot.yml` file in your repository and configure the `pip` dependency manager to:
+  1. Look for dependency information in the `authn-service` directory.
+
+  2. Schedule daily version updates.
+
+  3. Prefix the commit message with the `pip` package manager.
+
+  4. Assign the PR to yourself and a person from your workshop team as a reviewer. When specifying GitHub handles in the yml, do so without the `@` symbol. Please see the following solution as an example.
+
+  5. Add the custom label `triage-required` to enable filtering of the PRs.
+
+  6. Verify your changes by adding a [vulnerable dependency](https://github.com/advisories?query=severity%3Ahigh+ecosystem%3Apip) to `auth-service/requirements.txt`. For example:
+
+    ```requirements.txt
+    ...
+    django==2.1.0
+    ```
+
+How would you know if the configuration cannot be satisfied?
+
+1. Add a non-existing label to the configuration.
+
+2. Trigger a new dependabot security update by adding a vulnerable dependency to one of the projects.
+   For example, we can add the dependency `django-two-factor-auth==1.11` to `auth-service/requirements.txt`
+
+3. Look at the created PR to determine if the configuration has been satisfied.
+
+4. Use Dependabot chat commands to [manage PRs from Dependabot](https://docs.github.com/en/code-security/supply-chain-security/keeping-your-dependencies-updated-automatically/managing-pull-requests-for-dependency-updates).
+
+<details>
+<summary>Solution</summary>
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/authn-service"
+    schedule:
+      interval: "daily"
+    labels:
+      - "triage-required"
+    assignees:
+      - "dungeonstechlead"
+    reviewers:
+      - "dragonsengineer"
+    commit-message:
+      prefix: "pip"
+```
+</details>
+
+### _Stretch_ Grouping Dependabot PRs
+
+Earlier this year we launched a way to [group version updates](https://github.blog/changelog/2023-06-30-grouped-version-updates-for-dependabot-public-beta/) into PRs.
+
+This can be configured via the same `dependabot.yml` file that you used up until now. Here's an example:
+
+```yaml
+version: 2
+  updates:
+  - package-ecosystem: "bundler"
+    directory: "/"
+    schedule:
+      interval: weekly
+    # New!
+    groups:
+      # This is the name of your group, it will be used in PR titles and branch names
+      dev-dependencies:
+        # A pattern can be...
+        patterns:
+          - "rubocop" # a single dependency name
+          - "aws*"  # or a wildcard string that matches multiple dependencies
+          # If you'd simply like to group as many dependencies together as possible, 
+          # you can use the wildcard * - but keep in mind this may open a very large PR!
+        # Additionally, you can specify any dependencies to be excluded from the group
+        exclude-patterns:
+          - "aws-sdk"
+```
+
+You can find more details about the `groups` configuration option in the [documentation](https://docs.github.com/en/enterprise-cloud@latest/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file).
+
+How can you update your dependabot.yml configuration to group all `npm` development dependencies into a PR called `dev-dependencies` in future?
+
+### Exercise 3 - Dependancy Review (10 minutes)
+
+### Create a new workflow
+
+1. Navigate to https://github.com/actions/dependency-review-action and copy the Basic Usage workflow from [docs/examples.md](https://github.com/actions/dependency-review-action/blob/main/docs/examples.md#basic-usage)
+2. Create file in `.github/workflows`. Name it `dependancy-review.yml`.
+3. Paste the contents of the workflow file and save it to your default brain `main`. 
+
+### Trigger an action run in PR
+
+Now you have added the Dependancy Review action yor repo. To test it:
+
+1. Navigate to https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip
+2. Pick a pip vulnerable dependancy with severity `high` or higher. For example: https://github.com/advisories/GHSA-rwmf-w63j-p7gv
+3. Edit the `authn-service/requiremnts.txt` file and add the new vulnerable dependancy.
+4. **When committing do commit to a new branch**
+5. Open a PR against the main branch `main` and observe the result.
+
+<details>
+
+<summary>Hints</summary>
+
+Basic usage workflow:
+
+```yaml
+name: 'Dependency Review'
+on: [pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v4
+      - name: 'Dependency Review'
+        uses: actions/dependency-review-action@v3
+```
+
+Example vulnerable dependancy:
+
+
+`authn-service/requirements.txt`
+```text
+...
+cairosvg=2.6.0
+```
+
+</details>
+
+
+
+### Custom configuration
+
+Next we would like to customize the configuration to meet our policy:
+
+- Fail on vulnerabilities with severity `high` and above.
+- Only allow dependencies with `BSD-2-Clause` and `LGPL-2.0` licenses.
+
+And we would also make the experience better and show the results of the check directly in the PR.
+
+Check the available configuraiton parameters in the the README of the Dependancy Review action repository. You will find `fail-on-severity`, `allow-license` and `comment-summary-in-pr` options. Use them to adjust your workflow file and test the results.
+
+<details>
+<summary>Solution</summary>
+
+`.github/workflows/dependancy-review.yml`
+
+```yaml
+name: 'Dependency Review'
+
+on: 
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v3
+      - name: 'Dependency Review'
+        uses: actions/dependency-review-action@v3
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: true
+```
+
+</details>
+
+### Exercise 4 - Secret Scanning and Push Protection (10 mins)
 
 ### Enabling secret scanning
 
@@ -161,7 +352,7 @@ STRIPE_NEW="sk_live_devboxbcct1DfwS2ClCIKllL"
 
 ---
 
-### Exercise 3 - Secret Scanning - Custom Secret Scanning Pattern + Push protection (15 mins)
+### Exercise 5 - Secret Scanning - Custom Secret Scanning Pattern + Push protection (15 mins)
 
 ### Custom patterns for secret scanning
 
@@ -213,17 +404,15 @@ After creating and publishing the custom pattern go ahead and select the `Push p
 
 ---
 
-### Exercise 4 - Code Scanning and CodeQL (20 mins)
+### Exercise 6 - Code Scanning and CodeQL (15 mins)
 
 ### Enabling code scanning
 
-1. On the `Security` tab, in the **Vulnerability alerts** section, click **Code scanning**, and then click the **Configure scanning tool** button.
+1. On the `Security` tab, in the **Vulnerability alerts** section, click **Code scanning**, and then click the **Configure scanning tool** button. You will be directed to the `Code security and analysis` section of the repository settings. Click the drop down button **Set up** which provides two choices (Default, Advanced) - please select **Advanced** for this lab in order to generate the CodeQL related workflow file.
 
-2. Select `Set Up -> Advanced` and choose `CodeQL` as the analysis tool.
+2. Review the created Action workflow file `codeql-analysis.yml` and choose `Start commit` to accept the default proposed workflow.
 
-3. Review the created Action workflow file `codeql-analysis.yml` and choose `Start commit` to accept the default proposed workflow.
-
-4. Head over to the `Actions` tab to see the created workflow in action. Click on the workflow to view details and status for each analysis job.
+3. Head over to the `Actions` tab to see the created workflow in action. Click on the workflow to view details and status for each analysis job.
 
 ### Reviewing any failed analysis job
 
@@ -306,3 +495,11 @@ Follow the next steps to see it in action.
 2. Is the vulnerability detected in your PR?
 
 3. You can also configure the check failures for code scanning. Go into the `Code security and analysis` settings and modify the Check Failures. Set it to `Only critical/ Only errors` and see how that affects the code scanning status check for subsequent PR checks. In the next steps, you will be enabling additional query suites that have other severity types.
+
+#### _Stretch Exercise: Fixing false positive results_
+
+If you have identified a false positive, how would you deal with that? What if this is a common pattern within your applications?
+
+#### _Stretch Exercise: Enabling code scanning on your own repository_
+
+So far you've learned how to enable Dependabot, secret scanning, and code scanning. Try enabling this on your own repository, and see what kind of results you get!

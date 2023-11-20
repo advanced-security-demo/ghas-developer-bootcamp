@@ -2,18 +2,228 @@
 
 ## Overview
 
-- [ ] [Excercise 5 - Run tool Checkov in PR and integrate in Code Scanning](#exercise-5---run-tool-checkov-in-pr-and-integrate-in-code-scanning-15-mins)
-  - [ ] [Extra: Integrate Secret Scanning alerts in PR](#extra-integrate-secret-scanning-alerts-in-pr)
-- [ ] [Excercise 6 - Catch and alert on Push Protection bypasses](#exercise-6---catch-and-alert-on-push-protection-bypasses-15-mins)
-- [ ] [Excercise 7 - Report on Code Scanning alerts that got dismissed](#exercise-7---report-on-code-scanning-alerts-that-got-dismissed-15-mins)
-- [ ] [Excercise 8 - Investigate deactivation activity of GHAS in audit log](#exercise-8---investigate-deactivation-activity-of-ghas-in-audit-log-15-mins)
-- [ ] [Excercise 9 - Generate CodeQL debug and identify a problem](#exercise-9---generate-codeql-debug-and-identify-a-problem-15-mins)
+- [ ] [Exercise 7 - Customizing CodeQL Configuration](#exercise-7---customizing-codeql-configuration-15-mins)
+- [ ] [Exercise 8 - Run tool Checkov in PR and integrate in Code Scanning](#exercise-8---run-tool-checkov-in-pr-and-integrate-in-code-scanning-15-mins)
+- [ ] [Exercise 9 -  Integrate Secret Scanning alerts in PR](#exercise-9---integrate-secret-scanning-alerts-in-pr-10-mins)
+- [ ] [Exercise 10 - Generate CodeQL debug and identify a problem](#exercise-10---generate-codeql-debug-and-identify-a-problem-15-mins
+
+## How does it work? (Contd.)
+
+### Exercise 7 - Customizing CodeQL Configuration (15 mins)
+
+By default, CodeQL uses a selection of queries that provide high quality security results.
+However, you might want to change this behavior to:
+
+- Include code-quality queries.
+- Include queries with a lower signal to noise ratio to detect more potential issues.
+- To exclude queries in the default pack because they generate *false positives* for your architecture.
+- Include custom queries written for your project.
+
+1.  Create the file `.github/codeql/codeql-config.yml` and enable the `security-and-quality` suite.
+
+    **Hints**
+
+    1. A configuration file contains a key `queries` where you can specify additional queries as follows
+
+        ```yaml
+        name: "My CodeQL config"
+
+        queries:
+            - uses: <insert your query suite>
+        ```
+2. Enable your custom configuration in the code scanning workflow file `.github/codeql/codeql-config.yml`
+
+    **Hints**
+
+    1. The `init` action supports a `config-file` parameter to specify a configuration file.
+
+3. After the code scanning action has completed, are there new code scanning results?
+
+### Adding your own code scanning suite to exclude rules
+
+The queries that are executed is determined by the code scanning suite for a target language.
+You can create your own code scanning suite to change the set of included queries.
+
+By creating our own [code scanning suite](https://codeql.github.com/docs/codeql-cli/creating-codeql-query-suites/), we can exclude the rule that caused the false positive in our Java project.
+
+1. Create the file `custom-queries/code-scanning.qls` with the contents
+
+    ```yaml
+    # Reusing existing QL Pack
+    - import: codeql-suites/javascript-code-scanning.qls
+      from: codeql-javascript
+    - import: codeql-suites/java-code-scanning.qls
+      from: codeql-java
+    - import: codeql-suites/python-code-scanning.qls
+      from: codeql-python
+    - import: codeql-suites/go-code-scanning.qls
+      from: codeql-go
+    - exclude:
+        id:
+        - <insert rule id of false positive>
+    ```
+
+2. Configure the file `.github/codeql/codeql-config.yml` to use our suite.
+
+    **Hint**: We are now running both the default code scanning suite and our own custom suite.
+    To prevent CodeQL from resolving queries twice, disable the default queries with the option `disable-default-queries: true`
+
+<details>
+<summary>Solution</summary>
+
+```yaml
+name: "My CodeQL config"
+
+disable-default-queries: true
+
+queries:
+    - uses: ./custom-queries/code-scanning.qls
+```
+</details>
+
+3. After the code scanning action has completed, is the false positive still there?
+
+4. Try running additional queries with `security-extended` or `security-and-quality`. What kind of results do you see?
+
+**Note**: If you want to use these additional query suites and the custom query suite you've made, make sure to import the proper query packs to continue to exclude certain queries.
+
+<details>
+<summary>Solution</summary>
+
+```yaml
+# Reusing existing QL Pack
+- import: codeql-suites/javascript-security-and-quality.qls
+  from: codeql-javascript
+- import: codeql-suites/java-security-and-quality.qls
+  from: codeql-java
+- import: codeql-suites/python-security-and-quality.qls
+  from: codeql-python
+- import: codeql-suites/go-security-and-quality.qls
+  from: codeql-go
+- exclude:
+  id:
+    - java/spring-disabled-csrf-protection
+```
+</details>
+
+5. Try specifying directories to scan or not to scan. Note that this is only supported for interpreted languages, such as javascript/typescript, python, ruby, etc. Why would you include this in the configuration?
+
+<details>
+<summary>Solution</summary>
+
+```yaml
+name: "My CodeQL config"
+
+disable-default-queries: true
+
+queries:
+    - uses: ./custom-queries/code-scanning.qls
+
+paths-ignore:
+ - '**/test/**'
+```
+</details>
+
+### Understanding how to add a custom query
+
+One of the strong suites of CodeQL is its high-level language QL that can be used to write your own queries.
+_If you have experience with CodeQL and have come up with your own query so far, take this time to commit those changes and see if any alerts were produced._
+Regardless of experience, the next steps show you how to add one.
+
+1. Make sure to create a QL pack file. For example, `custom-queries/go/qlpack.yml` with the contents
+
+    ```yaml
+    name: my-go-queries
+    version: 0.0.0
+    libraryPathDependencies:
+        - codeql-go
+    ```
+
+    This file creates a [QL query pack](https://help.semmle.com/codeql/codeql-cli/reference/qlpack-overview.html) used to organize query files and their dependencies.
+
+2. Then, create the actual query file. For example, `custom-queries/go/jwt.ql` with the contents
+
+    ```ql
+    /**
+    * @name Missing token verification
+    * @description Missing token verification
+    * @id go/jwt-sign-check
+    * @kind problem
+    * @problem.severity warning
+    * @precision high
+    * @tags security
+    */
+    import go
+    /*
+    * Identify processors that are missing the token verification:
+    *
+    * func(token *jwt.Token) (interface{}, error) {
+    *    // Don't forget to validate the alg is what you expect:
+    *    //if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+    *    //        return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+    *    //}
+    *    ...
+    * }
+    */
+    from FuncLit f
+    where
+        // Identify the function via the argument part of the its signature
+        //     func(token *jwt.Token) (interface{}, error) { ... }
+        f.getParameter(0).getType() instanceof PointerType and
+        f.getParameter(0).getType().(PointerType).getBaseType().getName() = "Token" and
+        f.getParameter(0).getType().(PointerType).getBaseType().getPackage().getName() = "jwt" and
+        // and check whether it uses jwt.SigningMethodHMAC in any way
+        not exists(TypeExpr t |
+            f.getBody().getAChild*() = t and
+            t.getType().getName() = "SigningMethodHMAC" and
+            t.getType().getPackage().getName() = "jwt"
+        )
+    select f, "This function should be using jwt.SigningMethodHMAC"
+    ```
+3. Then, add the query to the CodeQL configuration file `.github/codeql/codeql-config.yml`
+
+**Hint** The `uses` key accepts repository relative paths.
+
+<details>
+<summary>Solution</summary>
+
+```yaml
+name: "My CodeQL config"
+
+disable-default-queries: true
+
+queries:
+    - uses: security-and-quality
+    - uses: ./custom-queries/code-scanning.qls
+    - uses: ./custom-queries/go/jwt.ql
+
+```
+</details>
+
+### _Stretch Exercise: Adding a custom query from an external repository_
+
+How would you incorporate that query/queries from other repositories?
+
+<details>
+<summary>Solution</summary>
+
+```yaml
+name: "CodeQL Config"
+
+disable-default-queries: false
+
+queries:
+  - name: go-custom-queries
+    uses: {owner}/{repository}/<path-to-query>@<some-branch>
+  - uses: security-and-quality
+```
+</details>
 
 ## Integrations - GHAS API and Webhooks
 
-### Exercise 5 - Run tool Checkov in PR and integrate in Code Scanning (15 mins)
+### Exercise 8 - Run tool Checkov in PR and integrate in Code Scanning (15 mins)
 
-In this exercise, we will integrate another security testing tool's results into Code Scanning. The choice of a tool is Checkov.
+In this exercise, we will integrate another security testing tool's results into Code Scanning. The choice of a tool is Checkov. We will create a new GitHub Action workflow where we will run Checkov scan against our codebase and report back the results to GitHub by calling the Code Scanning API.
 
 ### Create a new workflow
 
@@ -149,7 +359,9 @@ Next, go ahead and raise a PR against the default branch and check if that will 
 
 ---
 
-### Extra: Integrate Secret Scanning alerts in PR
+### Exercise 9 -  Integrate Secret Scanning alerts in PR (10 mins)
+
+Similar to the previous Exercise we will now integrate the [advanced-security/secret-scanning-action](https://github.com/advanced-security/secret-scanning-review-action). This time we will not be doing any local static checks against a codebase in the workflow but rather fetch information from the available GHAS APIs and display the results in the PR.
 
 ### Create a new workflow
 
@@ -184,89 +396,9 @@ Since you have Push Protection enabled go ahead and bypass it with `I'll fix it 
 
 Raise a PR and check if that will trigger an analysis and observe the results.
 
-### Exercise 6 - Catch and alert on Push Protection bypasses (15 mins)
-
-### Setting up the local environment
-
-If you haven't done it so far, go ahead and pull your training repository to your local machine.
-
-- Setup a python virtual environment and install the requirements
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-- Install [ngrok](https://ngrok.com/download) and set up a tunnel
-
-### Create a new webhook
-
-- Visit the organization or repository on GitHub that you wish to set the webhook up for, and follow the [Setting up a webhook](https://docs.github.com/en/developers/webhooks-and-events/webhooks/creating-webhooks#setting-up-a-webhook) instructions.
-- Choose the `application/json` content type
-- Configure the events by choosing "Let me select individual events," and deselect the "Push" event and instead select the "Code Scanning alerts" event
-- Run `python3 generic_wh.py`, and trigger an event from your repository (For example: close a code scanning alert)
-
-Using the information from the [secret_scanning_alert docs](https://docs.github.com/en/enterprise-cloud@latest/webhooks/webhook-events-and-payloads#secret_scanning_alert), adapt the python code to catch the `secret_scanning_alert` and print an alert message to the console.
-
-### Exercise 7 - Report on Code Scanning alerts that got dismissed (15 mins)
-
-Following the similar steps as in the previous exercise, create a new webhook that will catch the `code_scanning_alert` event and change the `alerts_closed.py` to trigger when a critical code scanning alert is dismissed and print an alert message to the console.
-
-<details> 
-<summary>Solution</summary>
-
-```python
-def foo():
-    data = json.loads(request.data)
-    print(json.dumps(data, indent=4, sort_keys=True))
-    if data["action"] == "closed_by_user" and data['alert']['rule']['security_severity_level'] == "critical":
-        print(f"WARNING: A developer dismissed a critical alert for reason: { data['alert']['dismissed_reason'] }.")
-    return "OK"
-```
-
-</details>
-
 ---
 
-### Troubleshooting GHAS
-
-### Exercise 8 - Investigate deactivation activity of GHAS in audit log (15 mins)
-
-In the past two days, you have made some changes to your repository - enabled GHAS, added a custom secret scanning pattern, enabled push protection, closed alerts, etc. With this exercise, we want to get familiar with how the audit log can help us troubleshoot issues or understand what happened in the past in regards to GHAS.
-
-We will use the audit log to answer questions about the actions that have been performed in our organization. Access the audit log by going to the `Settings` of your organization and selecting `Logs -> Audit log` from the left menu.
-
-You can use the UI to search through the events. Using the information from the [official documentation](https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/reviewing-the-audit-log-for-your-organization) can you find the answers to the following questions:
-
-1. How many times was GHAS enabled in your repository?
-2. How many times was GHAS disabled in your repository?
-3. How many times have you bypassed push protection?
-4. Who has disabled `repository_secret_scanning_push_protection` in your repository?
-
-<details>
-<summary>Solution</summary>
-
-1. How many times was GHAS enabled in your repository?
-
-    - Search for `action:repo.advanced_security_enabled repo:org/your-repo-name`
-
-2. How many times was GHAS disabled in your repository?
-
-    - Search for `action:repo.advanced_security_disabled repo:org/your-repo-name`
-
-3. How many times have you bypassed push protection?
-
-    - Search for `action:secret_scanning_push_protection.bypass actor:your-github-username`
-
-4. Who has disabled `repository_secret_scanning_push_protection` in your repository?
-
-    - Search for `action:repository_secret_scanning_push_protection.enable`
-
-</details>
----
-
-### Exercise 9 - Generate CodeQL debug and identify a problem (15 mins)
+### Exercise 10 - Generate CodeQL debug and identify a problem (15 mins)
 
 In this exercise, we will generate and look at options for you to debug a Code Scanning - CodeQL debug analysis run. We will generate a CodeQL Code Scanning debug run file and understand the structure of a debug artifact. Then, we will also look at a few debug artifacts to identify the problems and, lastly, how we can use the `Tool Status` to understand the status of the CodeQL analysis.
 
