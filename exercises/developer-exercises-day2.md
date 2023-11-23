@@ -4,8 +4,9 @@
 
 - [ ] [Exercise 7 - Customizing CodeQL Configuration](#exercise-7---customizing-codeql-configuration-15-mins)
 - [ ] [Exercise 8 - Run tool Checkov in PR and integrate in Code Scanning](#exercise-8---run-tool-checkov-in-pr-and-integrate-in-code-scanning-15-mins)
+- [ ] [Extra - CodeQL workflow optimization](#extra---codeql-workflow-optimization-10-mins)
 - [ ] [Exercise 9 -  Integrate Secret Scanning alerts in PR](#exercise-9---integrate-secret-scanning-alerts-in-pr-10-mins)
-- [ ] [Exercise 10 - Generate CodeQL debug and identify a problem](#exercise-10---generate-codeql-debug-and-identify-a-problem-15-mins
+- [ ] [Exercise 10 - Generate CodeQL debug and identify a problem](#exercise-10---generate-codeql-debug-and-identify-a-problem-15-mins)
 
 ## How does it work? (Contd.)
 
@@ -217,6 +218,74 @@ queries:
     uses: {owner}/{repository}/<path-to-query>@<some-branch>
   - uses: security-and-quality
 ```
+</details>
+
+### Extra - CodeQL workflow optimization (10 mins)
+
+In this exercise, we will optimize the CodeQL workflow we created to run only when code changes happen and shorten the runtime on. 
+
+To do this you will need to:
+
+- Add a `paths` and `paths-ignore` filter to the workflow to only run when code changes happen
+- Add a `cache` step to the workflow to cache the dependencies between runs.
+
+Using the information provided on [customizing advanced setup](https://docs.github.com/en/enterprise-cloud@latest/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning) change the triggers for your Codeql workflow to not run when `.md` and `.txt` files are changed.
+We also want to only trigger the workflow when code changes in `authn-service`, `frontend`, `gallery-service` and `storage-service` happen. To do this, we will use the `paths` and `paths-ignore` filters.
+
+<details>
+<summary>Solution</summary>
+
+```yaml
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'authn-service/**'
+      - 'frontend/**'
+      - 'gallery-service/**'
+      - 'storage-service/**'
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+  pull_request:
+    paths:
+      - 'authn-service/**'
+      - 'frontend/**'
+      - 'gallery-service/**'
+      - 'storage-service/**'
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+```
+</details>
+
+Next, we will add a `cache` steps to the workflow to cache the dependencies between runs for the Java and Go components. This will speed up the workflow execution time. To do this, you can use the `actions/setup-java` and `actions/setup-go` actions.
+
+As you have learned before, you can only condition these setups to the appropriate jobs. To do this, you can use the `if` conditional on the job level.
+
+<details>
+<summary>Solution</summary>
+
+```yaml
+- if: matrix.language == 'java-kotlin'
+  name: Setup Java
+  uses: actions/setup-java@v3
+  with:
+    distribution: 'temurin'
+    java-version: '17'
+    cache: 'maven'
+
+- if: matrix.language == 'go'
+  name: Setup Go
+  uses: actions/setup-go@v3
+  with:
+    go-version: '1.17'
+    cache: true
+    cache-dependency-path: gallery-service/go.sum
+```
+
 </details>
 
 ## Integrations - GHAS API and Webhooks

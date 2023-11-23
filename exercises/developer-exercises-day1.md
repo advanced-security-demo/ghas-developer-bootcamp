@@ -460,7 +460,7 @@ How would you [modify](https://docs.github.com/en/free-pro-team@latest/actions/r
 You can run this step for only `Java` analysis when you use the `if` expression and `matrix` context.
 
 ```yaml
-- if: matrix.language == 'java'  
+- if: matrix.language == 'java-kotlin'  
   uses: github/codeql-action/autobuild@v2
 ```
 </details>
